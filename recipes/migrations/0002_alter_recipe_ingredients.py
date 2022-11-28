@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='recipe',
             name='ingredients',
-            field=jsonfield.fields.JSONField(validators=[recipes.validators.validate_ingredient]),
+            field=jsonfield.fields.JSONField(validators=[recipes.validators.unique_ingredients]),
         ),
     ]

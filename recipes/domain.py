@@ -12,7 +12,7 @@ class Name:
     def __post_init__(self):
         if not (0 < len(self.value) < 30):
             raise ValidationError("Name must be between 1-30 character")
-        if not re.match(r'[a-zA-Z]', self.value):
+        if not re.match(r'^[a-zA-Z]+', self.value):
             raise ValidationError("Name not valid")
 
 
@@ -26,7 +26,7 @@ class Unit:
     def __post_init__(self):
         if not (0 < len(self.value) <= 10):
             raise ValidationError("Unit must be between 1-10 character")
-        if not re.match(r'[a-zA-Z\/]', self.value):
+        if not re.match(r'^[a-zA-Z\/]', self.value):
             raise ValidationError("Unit not syntactically correct")
         if self.value.lower() not in self.__myUnit:
             raise ValidationError(f"Unit must be one of this: {self.__myUnit}")
