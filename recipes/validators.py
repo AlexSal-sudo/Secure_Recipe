@@ -8,10 +8,11 @@ def validate_ingredient(): pass
 
 
 def unique_ingredients(list_of_ingredients: list):
-    for i in range(len(list_of_ingredients) - 1):
-        if list_of_ingredients[i]["name"] == list_of_ingredients[i + 1]["name"]:
-            name = list_of_ingredients[i]["name"]
-            raise ValidationError(f"Please, there is a redundant ingredient: {name.upper()}")
+    for i in range(len(list_of_ingredients)):
+        for j in range(len(list_of_ingredients)):
+            if i != j and list_of_ingredients[i]['name'] == list_of_ingredients[j]['name']:
+                raise ValidationError(
+                    f"There are some redundant ingredients! <{list_of_ingredients[i]['name'].upper()}>")
 
 
 class JSONSchemaValidator(BaseValidator):
