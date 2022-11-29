@@ -4,9 +4,6 @@ from .domain import Unit, Name, Quantity, Ingredient
 import jsonschema
 
 
-def validate_ingredient(): pass
-
-
 def unique_ingredients(list_of_ingredients: list):
     for i in range(len(list_of_ingredients)):
         for j in range(len(list_of_ingredients)):
