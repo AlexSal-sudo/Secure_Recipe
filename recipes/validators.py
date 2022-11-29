@@ -13,7 +13,7 @@ def unique_ingredients(list_of_ingredients: list):
 
 
 class JSONSchemaValidator(BaseValidator):
-    def compare(self, value, schema):
+    def compare(self, value: list, schema):
         try:
             jsonschema.validate(value, schema)
         except jsonschema.exceptions.ValidationError as e:

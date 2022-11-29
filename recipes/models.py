@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from .validators import unique_ingredients, JSONSchemaValidator
 import jsonfield
@@ -35,6 +36,15 @@ class Recipe(models.Model):
                                       validators=[JSONSchemaValidator(limit_value=INGREDIENTS_SCHEMA),
                                                   unique_ingredients])
 
-    # steps = ArrayField(models.CharField(max_length=160))
     def __str__(self):
         return self.title
+
+    def clean(self):
+        if not self.ingredients:
+            raise ValidationError("Please add at least one ingredient")
+        super(Recipe, self).clean()
+
+    def save(self, *args, **kwargs):
+        if not self.is_cleaned:
+            self.full_clean()
+        super(Recipe, self).save(*args, **kwargs)
