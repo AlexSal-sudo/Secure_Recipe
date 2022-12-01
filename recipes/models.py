@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import JSONField
 
-from .validators import unique_ingredients, JSONSchemaValidator
+from .validators import check_not_none_and_unique_ingredients, JSONSchemaValidator
 
 INGREDIENTS_SCHEMA = {
     "schema": "http://json-schema.org/draft-07/schema#",
@@ -33,7 +33,9 @@ class Recipe(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     ingredients = JSONField(default=list,
                             validators=[JSONSchemaValidator(limit_value=INGREDIENTS_SCHEMA),
-                                        unique_ingredients])
+                                        check_not_none_and_unique_ingredients])
 
     def __str__(self):
         return self.title
+
+
