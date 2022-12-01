@@ -1,9 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.core.exceptions import ValidationError
+from django.db.models import JSONField
 
 from .validators import unique_ingredients, JSONSchemaValidator
-import jsonfield
 
 INGREDIENTS_SCHEMA = {
     "schema": "http://json-schema.org/draft-07/schema#",
@@ -32,19 +31,9 @@ class Recipe(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    ingredients = jsonfield.JSONField(default=list,
-                                      validators=[JSONSchemaValidator(limit_value=INGREDIENTS_SCHEMA),
-                                                  unique_ingredients])
+    ingredients = JSONField(default=list,
+                            validators=[JSONSchemaValidator(limit_value=INGREDIENTS_SCHEMA),
+                                        unique_ingredients])
 
     def __str__(self):
         return self.title
-
-    def clean(self):
-        if not self.ingredients:
-            raise ValidationError("Please add at least one ingredient")
-        super(Recipe, self).clean()
-
-    def save(self, *args, **kwargs):
-        if not self.is_cleaned:
-            self.full_clean()
-        super(Recipe, self).save(*args, **kwargs)
