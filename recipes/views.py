@@ -1,9 +1,10 @@
-from django.db.models import Q
+from django.core.exceptions import ValidationError
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Recipe
+from .domain import Name, create_recipe_fromJSON
 from .permissions import IsAuthorOrReadOnly
 from .serializers import UserRecipeSerializer
 from .serializers import AdminRecipeSerializer
@@ -35,12 +36,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['GET'], url_path='by-ingredient/(?P<name>[^/.]+)')
     def all_recipe_by_ingredient(self, request, name=None):
+        try:
+            Name(name)
+        except ValidationError as e:
+            return Response(data=e.message, status=status.HTTP_400_BAD_REQUEST)
+
         queryset = Recipe.objects.all()
         output = []
         for recipe in queryset:
-            for ingredient in recipe.ingredients:
-                if ingredient['name'] == name:
-                    output.append(self.get_serializer(recipe).data)
+            create_recipe_fromJSON(self.get_serializer(recipe).data)
+            # for ingredient in recipe.ingredients:
+            #     create_ingredient_fromJSON(ingredient)
+            #     if ingredient['name'] == name:
+            #         output.append(self.get_serializer(recipe).data)
         if output:
             return Response(data=output, status=status.HTTP_200_OK)
 
