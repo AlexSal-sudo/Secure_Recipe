@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import JSONField
 
@@ -27,8 +28,8 @@ INGREDIENTS_SCHEMA = {
 
 class Recipe(models.Model):
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    title = models.CharField(max_length=50)
-    description = models.TextField()
+    title = models.CharField(max_length=30, validators=[RegexValidator(regex=r'^[a-zA-Z ]+$')])
+    description = models.TextField(max_length=100, validators=[RegexValidator(regex=r'^\D+$')])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     ingredients = JSONField(default=list,
