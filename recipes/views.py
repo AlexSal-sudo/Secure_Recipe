@@ -20,44 +20,49 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return UserRecipeSerializer
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        if not self.request.user.is_superuser:
+            serializer.save(author=self.request.user)
 
     # TODO Use the correct serializer
-    @action(detail=False, methods=['GET'], url_path='byAuthor/(?P<pk>[^/.]+)')
+    @action(detail=False, methods=['GET'], url_path='by-author/(?P<pk>[^/.]+)')
     def all_recipe_by_author(self, request, pk=None):
         queryset = Recipe.objects.filter(author=pk)
-        serializer = UserRecipeSerializer(queryset, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         if serializer.data:
             return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-        return Response(data='Sorry, cannot find recipes written by the user', status=status.HTTP_204_NO_CONTENT)
+        return Response(data='Sorry, cannot find recipes written by this author', status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['GET'], url_path='byIngredient/(?P<name>[^/.]+)')
+    @action(detail=False, methods=['GET'], url_path='by-ingredient/(?P<name>[^/.]+)')
     def all_recipe_by_ingredient(self, request, name=None):
-        queryset = Recipe.objects.filter(ingredients__name__icontains=[{'name': name}])
-        serializer = UserRecipeSerializer(queryset, many=True)
-        if serializer.data:
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        queryset = Recipe.objects.all()
+        output = []
+        for recipe in queryset:
+            for ingredient in recipe.ingredients:
+                if ingredient['name'] == name:
+                    output.append(self.get_serializer(recipe).data)
+        if output:
+            return Response(data=output, status=status.HTTP_200_OK)
 
-        return Response(data='Sorry, there is no recipe with this ingredient', status=status.HTTP_204_NO_CONTENT)
+        return Response(data="Sorry, there is no recipe with this ingredient", status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['GET'], url_path='byTitle/(?P<title>[^/.]+)')
+    @action(detail=False, methods=['GET'], url_path='by-title/(?P<title>[^/.]+)')
     def all_recipe_by_title(self, request, title=None):
         queryset = Recipe.objects.filter(title__contains=title)
-        serializer = UserRecipeSerializer(queryset, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         if serializer.data:
             return Response(data=serializer.data, status=status.HTTP_200_OK)
 
         return Response(data='Sorry, there is no recipe with this title', status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['GET'], url_path='sortByTitle')
+    @action(detail=False, methods=['GET'], url_path='sort-by-title')
     def sort_recipe_by_title(self, request):
         queryset = Recipe.objects.all().order_by('title').values()
-        serializer = UserRecipeSerializer(queryset, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['GET'], url_path='sortByDate')
     def sort_recipe_by_date(self, request):
         queryset = Recipe.objects.all().order_by('-created_at').values()
-        serializer = UserRecipeSerializer(queryset, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
