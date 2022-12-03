@@ -12,7 +12,7 @@ INGREDIENTS_SCHEMA = {
     "items": {
         "type": "object",
         "properties": {
-            "name": {"description": "The name of the ingredient", "type": 'string', 'minLen': 1, 'maxLen': 30,
+            "name": {"description": "The name of the ingredient", "type": 'string', 'minLength': 1, 'maxLength': 30,
                      'pattern': "^[a-zA-Z]+$"},
             "quantity": {"description": "The quantity of the ingredient", "type": 'number', "minimum": 0,
                          "maximum": 1000},
