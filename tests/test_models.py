@@ -6,7 +6,7 @@ from mixer.backend.django import mixer
 
 @pytest.fixture()
 def ingredient():
-    yield [{"name": "Uova", "unit": "g", "quantity": 20}]
+    yield [{"name": "Eggs", "unit": "g", "quantity": 20}]
 
 
 def test_recipe_title_of_length_31_raise_exception(db, ingredient):
@@ -67,7 +67,7 @@ def test_recipe_ingredients_without_quantity_raise_exception(db):
 
 
 def test_recipe_ingredients_name_not_only_char_raise_exception(db):
-    recipe = mixer.blend('recipes.Recipe', title='Test', description='TEST',  ingredients=[{
+    recipe = mixer.blend('recipes.Recipe', title='Test', description='TEST', ingredients=[{
         "name": "23test32",
         "unit": "g",
         "quantity": 40
@@ -135,3 +135,14 @@ def test_recipe_ingredients_more_than_three_parameters_raise_exception(db):
     }])
     with pytest.raises(ValidationError) as err:
         recipe.full_clean()
+
+
+def test_recipe_is_well_formatted_not_raise_exception(db, ingredient):
+    recipe = mixer.blend('recipes.Recipe', title='A title', description='My description', ingredients=ingredient)
+    recipe.full_clean()
+
+
+def test_recipe_str_return_title(db, ingredient):
+    recipe = mixer.blend('recipes.Recipe', title='A title', description='My description', ingredients=ingredient)
+    recipe.full_clean()
+    assert recipe.__str__() == "A title"
