@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -24,9 +26,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_superuser:
             serializer.save(author=self.request.user)
 
-    @action(detail=False, methods=['GET'], url_path='by-author/(?P<pk>[^/.]+)')
+    @action(detail=False, methods=['GET'], url_path='by-author/(?P<pk>[^/.]+)', url_name='filter-author')
     def all_recipe_by_author(self, request, pk=None):
-        if not isinstance(pk, int):
+        if not re.match(r'^\d+$', pk):
             return Response(data="Please enter a valid author", status=status.HTTP_400_BAD_REQUEST)
 
         queryset = Recipe.objects.filter(author=pk)
@@ -36,10 +38,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return Response(data='Sorry, cannot find recipes written by this author', status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['GET'], url_path='by-ingredient/(?P<name>[^/.]+)')
+    @action(detail=False, methods=['GET'], url_path='by-ingredient/(?P<name>[^/.]+)', url_name='filter-ingredient')
     def all_recipe_by_ingredient(self, request, name=None):
         try:
-            n = Name(name)
+            n = Name(name.lower())
         except ValidationError as e:
             return Response(data=e.message, status=status.HTTP_400_BAD_REQUEST)
 
@@ -57,7 +59,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return Response(data="Sorry, there is no recipe with this ingredient", status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['GET'], url_path='by-title/(?P<title>[^/.]+)')
+    @action(detail=False, methods=['GET'], url_path='by-title/(?P<title>[^/.]+)', url_name='filter-title')
     def all_recipe_by_title(self, request, title=None):
         try:
             t = Title(title)
@@ -71,13 +73,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return Response(data='Sorry, there is no recipe with this title', status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['GET'], url_path='sort-by-title')
+    @action(detail=False, methods=['GET'], url_path='sort-by-title', url_name='sort-title')
     def sort_recipe_by_title(self, request):
         queryset = Recipe.objects.all().order_by('title').values()
         serializer = self.get_serializer(queryset, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['GET'], url_path='sortByDate')
+    @action(detail=False, methods=['GET'], url_path='sort-by-date', url_name='sort-date')
     def sort_recipe_by_date(self, request):
         queryset = Recipe.objects.all().order_by('-created_at').values()
         serializer = self.get_serializer(queryset, many=True)

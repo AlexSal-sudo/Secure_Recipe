@@ -24,7 +24,7 @@ class Name:
     def __post_init__(self):
         if not (0 < len(self.value) < 30):
             raise ValidationError("Name of the ingredient must be between 1-30 character")
-        if not re.match(r'^[a-zA-Z]+$', self.value):
+        if not re.match(r'^[a-zA-ZÀ-ú ]+$', self.value):
             raise ValidationError("Name of the ingredient is not syntactically correct")
 
 
@@ -136,5 +136,5 @@ def create_recipe_fromJSON(json_recipe: dict) -> Recipe:
 
 @typechecked
 def create_ingredient_fromJSON(json_ingredient: dict) -> Ingredient:
-    return Ingredient(Name(json_ingredient['name']), Quantity(json_ingredient['quantity']),
+    return Ingredient(Name(json_ingredient['name'].lower()), Quantity(json_ingredient['quantity']),
                       Unit(json_ingredient['unit']))
