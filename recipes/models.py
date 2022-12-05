@@ -31,8 +31,8 @@ class Recipe(models.Model):
     title = models.CharField(max_length=30, validators=[RegexValidator(regex=r'^[a-zA-ZÀ-ú ]+$')])
     description = models.TextField(max_length=500, validators=[MaxLengthValidator(limit_value=500),
                                                                RegexValidator(regex=r'^[a-zA-Z0-9À-ú \'!;\.,\n]+$')])
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateField(auto_now_add=True)
+    updated_at = models.DateField(auto_now=True)
     ingredients = JSONField(default=list,
                             validators=[JSONSchemaValidator(limit_value=INGREDIENTS_SCHEMA),
                                         check_not_none_and_unique_ingredients])

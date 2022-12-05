@@ -1,19 +1,34 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, InitVar
 import re
-from typing import List, Callable
+from datetime import date, datetime
+from typing import List, Callable, Dict, Any, Optional
 from django.core.exceptions import ValidationError
 from typeguard import typechecked
+from valid8 import validate
 
 
 @typechecked
-def pattern(regex: str) -> Callable[[str], bool]:
-    r = re.compile(regex)
+@dataclass(frozen=True)
+class Title:
+    value: str
 
-    def res(value):
-        return bool(r.fullmatch(value))
+    def __post_init__(self):
+        if not (0 < len(self.value) < 30):
+            raise ValidationError("Title must be between 1-30 character")
+        if not re.match(r'^[a-zA-Z ]+$', self.value):
+            raise ValidationError("Title is not syntactically correct")
 
-    res._name_ = f'pattern({regex})'
-    return res
+
+@typechecked
+@dataclass(frozen=True)
+class Description:
+    value: str
+
+    def __post_init__(self):
+        if not (0 < len(self.value) < 500):
+            raise ValidationError("Description must be between 1-500 character")
+        if not re.match(r'^[a-zA-Z0-9À-ú \'!;\.,\n]+', self.value):
+            raise ValidationError("Description is not syntactically correct")
 
 
 @typechecked
@@ -27,21 +42,8 @@ class Name:
         if not re.match(r'^[a-zA-ZÀ-ú ]+$', self.value):
             raise ValidationError("Name of the ingredient is not syntactically correct")
 
-
-@typechecked
-@dataclass(frozen=True)
-class Unit:
-    value: str
-
-    __myUnit = ["g", "l", "kg", "n/a"]
-
-    def __post_init__(self):
-        if not (0 < len(self.value) <= 10):
-            raise ValidationError("Unit of the ingredient must be between 1-10 character")
-        if not re.match(r'^[a-zA-Z\/]', self.value):
-            raise ValidationError("Unit of the ingredient not syntactically correct")
-        if self.value.lower() not in self.__myUnit:
-            raise ValidationError(f"Unit of the ingredient must be one of this: {self.__myUnit}")
+    def __eq__(self, other):
+        return self.value.lower() == other.value.lower()
 
 
 @typechecked
@@ -52,6 +54,20 @@ class Quantity:
     def __post_init__(self):
         if not (0 < self.value <= 1000):
             raise ValidationError("Quantity of the ingredient must be between 1-1000")
+
+
+@typechecked
+@dataclass(frozen=True)
+class Unit:
+    value: str
+
+    __myUnit = ['kg', 'g', 'l', 'cl', 'ml', 'cup', 'n/a']
+
+    def __post_init__(self):
+        if not (0 < len(self.value) <= 3):
+            raise ValidationError("Unit of the ingredient must be between 1-3 character")
+        if self.value.lower() not in self.__myUnit:
+            raise ValidationError(f"Unit of the ingredient must be one of this: {self.__myUnit}")
 
 
 @typechecked
@@ -79,62 +95,86 @@ class Ingredient:
 
 @typechecked
 @dataclass(frozen=True)
-class Description:
-    value: str
-
-    def __post_init__(self):
-        if not (0 < len(self.value) < 100):
-            raise ValidationError("Description must be between 1-100 character")
-        if not re.match(r'^\D+$', self.value):
-            raise ValidationError("Description is not syntactically correct")
-
-
-@typechecked
-@dataclass(frozen=True)
-class Title:
-    value: str
-
-    def __post_init__(self):
-        if not (0 < len(self.value) < 30):
-            raise ValidationError("Title must be between 1-30 character")
-        if not re.match(r'^[a-zA-Z ]+$', self.value):
-            print(self.value)
-            raise ValidationError("Title is not syntactically correct")
-
-
-@typechecked
-@dataclass(frozen=True)
 class Recipe:
     title: Title
     description: Description
-    __list_of_ingredients: List[Ingredient] = field(default_factory=list, init=False)
+    created_at: date
+    __ingredients: List[Ingredient] = field(default_factory=list, repr=False, init=False)
+    __map_of_ingredients: Dict[Name, Ingredient] = field(default_factory=dict, repr=False, init=False)
+    create_key: InitVar[Any] = field(default='None')
+
+    def __post_init__(self, create_key: Any):
+        validate('create_key', create_key, custom=Recipe.Builder.is_valid_key)
 
     @typechecked()
     def has_name_in_ingredient(self, name: Name) -> bool:
-        for ingredient in self.__list_of_ingredients:
+        for ingredient in self.__ingredients:
             if ingredient.name == name:
                 return True
         return False
 
-    @typechecked()
-    def add_ingredient(self, ingredient: Ingredient):
-        self.__list_of_ingredients.append(ingredient)
+    def _add_ingredient(self, ingredient: Ingredient, create_key: Any) -> None:
+        validate('create_key', create_key, custom=Recipe.Builder.is_valid_key)
+        validate('ingredient.name', ingredient.name, custom=lambda v: v not in self.__map_of_ingredients)
+        self.__ingredients.append(ingredient)
+        self.__map_of_ingredients[ingredient.name] = ingredient
+
+    def _has_at_least_one_ingredient(self):
+        return len(self.__ingredients) >= 1
 
     @typechecked()
     def remove_ingredient(self, ingredient: Ingredient):
-        self.__list_of_ingredients.remove(ingredient)
+        self.__ingredients.remove(ingredient)
+
+    @property
+    def recipe_title(self):
+        return self.title
+
+    @property
+    def recipe_author(self):
+        return self.author
+
+    @property
+    def recipe_description(self):
+        return self.description
+
+    @typechecked
+    @dataclass()
+    class Builder:
+        __recipe: Optional['Recipe']
+        __create_key = object()
+
+        def __init__(self, title: Title, description: Description, created_at: date):
+            self.__recipe = Recipe(title, description, created_at, self.__create_key)
+
+        @staticmethod
+        def is_valid_key(key: Any) -> bool:
+            return key == Recipe.Builder.__create_key
+
+        def with_ingredient(self, ingredient: Ingredient) -> 'Recipe.Builder':
+            validate('recipe', self.__recipe)
+            self.__recipe._add_ingredient(ingredient, self.__create_key)
+            return self
+
+        def build(self) -> 'Recipe':
+            validate('recipe', self.__recipe)
+            validate('recipe.ingredients', self.__recipe._has_at_least_one_ingredient(), equals=True)
+            final_recipe, self.__recipe = self.__recipe, None
+            return final_recipe
 
 
 @typechecked
-def create_recipe_fromJSON(json_recipe: dict) -> Recipe:
-    recipe = Recipe(Title(json_recipe['title']), Description(json_recipe['description']))
-    for ingredient in json_recipe['ingredients']:
-        recipe.add_ingredient(create_ingredient_fromJSON(ingredient))
+@dataclass(frozen=True)
+class JsonHandler:
+    @staticmethod
+    def create_ingredients_from_json(ingredient) -> Ingredient:
+        return Ingredient(Name(ingredient['name']), Quantity(ingredient['quantity']), Unit(ingredient['unit']))
 
-    return recipe
-
-
-@typechecked
-def create_ingredient_fromJSON(json_ingredient: dict) -> Ingredient:
-    return Ingredient(Name(json_ingredient['name'].lower()), Quantity(json_ingredient['quantity']),
-                      Unit(json_ingredient['unit']))
+    @staticmethod
+    def create_recipe_from_json(json):
+        new_recipe = Recipe.Builder(Title(json['title']), Description(json['description']),
+                                    datetime.strptime(json['created_at'], '%Y-%m-%d').date())
+        for ingredient in json['ingredients']:
+            new_recipe = new_recipe.with_ingredient(JsonHandler.create_ingredients_from_json(ingredient))
+        new_recipe = new_recipe.build()
+        return new_recipe

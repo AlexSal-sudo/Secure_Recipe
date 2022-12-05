@@ -18,6 +18,7 @@ from django.urls import path, include
 from rest_framework.documentation import include_docs_urls
 from rest_framework.schemas import get_schema_view
 
+
 API_TITLE = 'Secure Recipe'
 API_DESCRIPTION = 'A Web API for our Secure project'
 

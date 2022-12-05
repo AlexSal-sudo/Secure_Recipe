@@ -19,4 +19,5 @@ class AdminRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'author', 'title', 'description', 'created_at', 'updated_at', 'ingredients')
         model = Recipe
+        read_only_fields = ['author']
 

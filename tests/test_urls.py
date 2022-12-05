@@ -239,7 +239,7 @@ class TestUserRecipeViewSet:
         assert non_response.status_code == HTTP_204_NO_CONTENT
         assert response.status_code == HTTP_204_NO_CONTENT
 
-    @patch('recipes.views.create_recipe_fromJSON', side_effect=ValidationError("ERROR"))
+    @patch('recipes.views.JsonHandler.create_recipe_from_json', side_effect=ValidationError("ERROR"))
     def test_every_user_if_there_was_internal_error_then_it_is_notified(self, mock: Mock, recipes):
         path = reverse('recipes-filter-ingredient', kwargs={'name': 'eggs'})
         user = mixer.blend(get_user_model())

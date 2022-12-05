@@ -5,5 +5,4 @@ from recipes.views import RecipeViewSet
 
 router = SimpleRouter()
 router.register('', RecipeViewSet, basename='recipes')
-
 urlpatterns = router.urls

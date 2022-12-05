@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Recipe
-from .domain import Name, create_recipe_fromJSON, Title
+from .domain import Name, Title, JsonHandler
 from .permissions import IsAuthorOrReadOnly
 from .serializers import UserRecipeSerializer
 from .serializers import AdminRecipeSerializer
@@ -23,8 +23,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return UserRecipeSerializer
 
     def perform_create(self, serializer):
-        if not self.request.user.is_superuser:
-            serializer.save(author=self.request.user)
+        serializer.save(author=self.request.user)
 
     @action(detail=False, methods=['GET'], url_path='by-author/(?P<pk>[^/.]+)', url_name='filter-author')
     def all_recipe_by_author(self, request, pk=None):
@@ -49,7 +48,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         output = []
         for recipe in queryset:
             try:
-                if create_recipe_fromJSON(self.get_serializer(recipe).data).has_name_in_ingredient(n):
+                if JsonHandler.create_recipe_from_json(self.get_serializer(recipe).data).has_name_in_ingredient(n):
                     output.append(self.get_serializer(recipe).data)
             except ValidationError as e:
                 return Response(data=e.message, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -84,3 +83,32 @@ class RecipeViewSet(viewsets.ModelViewSet):
         queryset = Recipe.objects.all().order_by('-created_at').values()
         serializer = self.get_serializer(queryset, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['GET'], url_path='personal-area', url_name='personal',
+            permission_classes=[permissions.IsAuthenticated])
+    def personal_area(self, request):
+        queryset = Recipe.objects.all() if request.user.is_superuser else Recipe.objects.filter(author=request.user)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['GET'], url_path='personal-area/sort', url_name='personal',
+            permission_classes=[permissions.IsAuthenticated])
+    def sort_personal_area(self, request):
+        queryset = Recipe.objects.filter(author=request.user).order_by('-created_at').values()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+# class PrivateRecipeViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.DestroyModelMixin,
+#                            viewsets.GenericViewSet):
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     def get_serializer_class(self):
+#         if self.request.user.is_superuser:
+#             return AdminRecipeSerializer
+#         return UserRecipeSerializer
+#
+#     def get_queryset(self):
+#         return Recipe.objects.all() if self.request.user.is_superuser else Recipe.objects.filter(
+#             author=self.request.user)
+
