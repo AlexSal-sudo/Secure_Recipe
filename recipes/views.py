@@ -99,16 +99,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
-# class PrivateRecipeViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.DestroyModelMixin,
-#                            viewsets.GenericViewSet):
-#     permission_classes = [permissions.IsAuthenticated]
-#
-#     def get_serializer_class(self):
-#         if self.request.user.is_superuser:
-#             return AdminRecipeSerializer
-#         return UserRecipeSerializer
-#
-#     def get_queryset(self):
-#         return Recipe.objects.all() if self.request.user.is_superuser else Recipe.objects.filter(
-#             author=self.request.user)
+class PrivateRecipeViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.user.is_superuser:
+            return AdminRecipeSerializer
+        return UserRecipeSerializer
+
+    def get_queryset(self):
+        return Recipe.objects.all() if self.request.user.is_superuser else Recipe.objects.filter(
+            author=self.request.user)
 
