@@ -37,20 +37,20 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
 
+    'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
     'allauth',
     'allauth.account',
     'dj_rest_auth',
     'dj_rest_auth.registration',
-    'corsheaders',
 
     'recipes.apps.RecipesConfig',
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASS': [
-      'rest_framework.authentication.SessionAuthentication',
-      'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAdminUser',
@@ -70,12 +70,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+]
+CORS_ORIGIN_WHITELIST = [
     'http://localhost:8000',
     'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://192.168.1.187:5173',
-    'http://192.168.128.1:5173'
 ]
 
 ROOT_URLCONF = 'Secure_Recipe_Django.urls'
@@ -147,7 +148,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
