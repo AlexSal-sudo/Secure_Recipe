@@ -16,7 +16,7 @@ class UserRecipeSerializer(serializers.ModelSerializer):
         return value
 
 
-class AdminRecipeSerializer(serializers.ModelSerializer):
+class AdminModeratorRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'author', 'title', 'description', 'created_at', 'updated_at', 'ingredients')
         model = Recipe

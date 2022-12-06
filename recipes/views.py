@@ -7,9 +7,8 @@ from rest_framework.response import Response
 
 from .models import Recipe
 from .domain import Name, Title, JsonHandler
-from .permissions import IsDeleter
-from .serializers import UserRecipeSerializer
-from .serializers import AdminRecipeSerializer
+from .permissions import IsModeratorOrAdmin
+from .serializers import UserRecipeSerializer, AdminModeratorRecipeSerializer
 
 
 class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -18,7 +17,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_serializer_class(self):
         if self.request.user.is_superuser:
-            return AdminRecipeSerializer
+            return AdminModeratorRecipeSerializer
         return UserRecipeSerializer
 
     @action(detail=False, methods=['GET'], url_path='by-author/(?P<pk>[^/.]+)', url_name='filter-author')
@@ -82,19 +81,28 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class PrivateRecipeViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsDeleter]
+    permission_classes = [permissions.IsAuthenticated, IsModeratorOrAdmin]
 
     def get_serializer_class(self):
-        if self.request.user.is_superuser:
-            return AdminRecipeSerializer
+        if self.request.user.is_superuser or self.request.user.groups.filter(name='recipe_moderators').exists():
+            return AdminModeratorRecipeSerializer
         return UserRecipeSerializer
+
+    def create(self, request, *args, **kwargs):
+        if 'author' in request.data:
+            if not re.match(r'^\d+$', request.data['author']):
+                return Response(data="Please enter a valid author", status=status.HTTP_400_BAD_REQUEST)
+            elif int(request.data['author']) != self.request.user.pk:
+                return Response(status=status.HTTP_403_FORBIDDEN)
+
+        return super(PrivateRecipeViewSet, self).create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
 
     def get_queryset(self):
-        return Recipe.objects.all() if self.request.user.is_superuser else Recipe.objects.filter(
-            author=self.request.user)
+        return Recipe.objects.all() if self.request.user.is_superuser or self.request.user.groups.filter(
+            name='recipe_moderators').exists() else Recipe.objects.filter(author=self.request.user)
 
     @action(detail=False, methods=['GET'], url_path='sort-by-title', url_name='sort-title')
     def sort_recipe_by_title(self, request):
