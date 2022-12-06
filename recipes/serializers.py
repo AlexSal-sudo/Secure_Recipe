@@ -4,6 +4,7 @@ from recipes.models import Recipe
 
 
 class UserRecipeSerializer(serializers.ModelSerializer):
+    #username = serializers.CharField(source='author.username', read_only=True)
     class Meta:
         fields = ('id', 'author', 'title', 'description', 'created_at', 'ingredients')
         model = Recipe

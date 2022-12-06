@@ -7,23 +7,19 @@ from rest_framework.response import Response
 
 from .models import Recipe
 from .domain import Name, Title, JsonHandler
-from .permissions import IsAuthorOrReadOnly, IsModeratorOrSuperUser
+from .permissions import IsDeleter
 from .serializers import UserRecipeSerializer
 from .serializers import AdminRecipeSerializer
 
 
-# Create your views here.
-class RecipeViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Recipe.objects.all()
+    permission_classes = [permissions.AllowAny]
 
     def get_serializer_class(self):
         if self.request.user.is_superuser:
             return AdminRecipeSerializer
         return UserRecipeSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
 
     @action(detail=False, methods=['GET'], url_path='by-author/(?P<pk>[^/.]+)', url_name='filter-author')
     def all_recipe_by_author(self, request, pk=None):
@@ -84,30 +80,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    # @action(detail=False, methods=['GET'], url_path='personal-area', url_name='personal',
-    #         permission_classes=[permissions.IsAuthenticated])
-    # def personal_area(self, request):
-    #     queryset = Recipe.objects.all() if request.user.is_superuser else Recipe.objects.filter(author=request.user)
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return Response(data=serializer.data, status=status.HTTP_200_OK)
-    #
-    # @action(detail=False, methods=['GET'], url_path='personal-area/sort', url_name='personal',
-    #         permission_classes=[permissions.IsAuthenticated])
-    # def sort_personal_area(self, request):
-    #     queryset = Recipe.objects.filter(author=request.user).order_by('-created_at').values()
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return Response(data=serializer.data, status=status.HTTP_200_OK)
-
 
 class PrivateRecipeViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsModeratorOrSuperUser]
+    permission_classes = [permissions.IsAuthenticated, IsDeleter]
 
     def get_serializer_class(self):
         if self.request.user.is_superuser:
             return AdminRecipeSerializer
         return UserRecipeSerializer
 
+    def perform_create(self, serializer):
+        return serializer.save(author=self.request.user)
+
     def get_queryset(self):
         return Recipe.objects.all() if self.request.user.is_superuser else Recipe.objects.filter(
             author=self.request.user)
 
+    @action(detail=False, methods=['GET'], url_path='sort-by-title', url_name='sort-title')
+    def sort_recipe_by_title(self, request):
+        queryset = self.get_queryset().order_by('title').values()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['GET'], url_path='sort-by-date', url_name='sort-date')
+    def sort_recipe_by_date(self, request):
+        queryset = self.get_queryset().order_by('-created_at').values()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)

@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from mixer.backend.django import mixer
 from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, \
-    HTTP_204_NO_CONTENT, HTTP_500_INTERNAL_SERVER_ERROR
+    HTTP_204_NO_CONTENT, HTTP_500_INTERNAL_SERVER_ERROR, HTTP_405_METHOD_NOT_ALLOWED
 from rest_framework.test import APIClient
 
 
@@ -48,19 +48,19 @@ class TestUserRecipeViewSet:
         path = reverse('recipes-list')
         client = get_client()
         response = client.post(path)
-        assert response.status_code == HTTP_403_FORBIDDEN
+        assert response.status_code == HTTP_405_METHOD_NOT_ALLOWED
 
     def test_anon_user_cant_make_put_request(self):
         path = reverse('recipes-list')
         client = get_client()
         response = client.put(path)
-        assert response.status_code == HTTP_403_FORBIDDEN
+        assert response.status_code == HTTP_405_METHOD_NOT_ALLOWED
 
     def test_anon_user_cant_make_delete_request(self):
         path = reverse('recipes-list')
         client = get_client()
         response = client.delete(path)
-        assert response.status_code == HTTP_403_FORBIDDEN
+        assert response.status_code == HTTP_405_METHOD_NOT_ALLOWED
 
     def test_anon_user_can_make_get_request(self, recipes):
         path = reverse('recipes-list')
