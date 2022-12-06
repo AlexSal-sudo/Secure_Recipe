@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from mixer.backend.django import mixer
 from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, \
-    HTTP_204_NO_CONTENT, HTTP_500_INTERNAL_SERVER_ERROR, HTTP_405_METHOD_NOT_ALLOWED
+    HTTP_204_NO_CONTENT, HTTP_500_INTERNAL_SERVER_ERROR, HTTP_405_METHOD_NOT_ALLOWED, HTTP_404_NOT_FOUND
 from rest_framework.test import APIClient
 
 
@@ -109,16 +109,30 @@ class TestUserRecipeViewSet:
         obj = parse(response)
         assert len(obj) == len(recipes)
 
-    # TODO RIGUARDARE QUESTO TEST
-    def test_logged_user_can_make_post_request(self):
+    def test_logged_user_cant_make_post_request_from_public_interface(self):
         path = reverse('recipes-list')
+        user = mixer.blend(get_user_model())
+        client = get_client(user)
+        recipe = {'title': "Test", 'description': 'My test recipe'}
+        response = client.post(path, recipe)
+        assert response.status_code == HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_logged_user_cant_make_delete_request_from_public_interface(self, recipes):
+        path = reverse('recipes-detail', kwargs={'pk': recipes[0].pk})
+        user = mixer.blend(get_user_model())
+        client = get_client(user)
+        response = client.delete(path)
+        assert response.status_code == HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_logged_user_can_make_post_request(self):
+        path = reverse('personal-area-list')
         user = mixer.blend(get_user_model())
         client = get_client(user)
         recipe = {'title': "Test", 'description': 'My test recipe'}
         response = client.post(path, recipe)
         assert response.status_code == HTTP_201_CREATED
 
-    #TODO CHECK BETTER
+    # TODO CHECK BETTER
 
     # def test_logged_user_cant_post_recipe_with_the_name_of_other_user(self, recipes):
     #     path = reverse('recipes-list')
@@ -128,18 +142,18 @@ class TestUserRecipeViewSet:
     #     response = client.post(path, recipe)
     #     assert response.status_code == HTTP_403_FORBIDDEN
 
-    def test_logged_user_cant_delete_recipe_of_other_user(self, recipes):
-        path = reverse('recipes-detail', kwargs={'pk': recipes[0].pk})
+    def test_logged_user_cant_delete_recipe_of_other_user_from_personal_area(self, recipes):
+        path = reverse('personal-area-detail', kwargs={'pk': recipes[0].pk})
         user = mixer.blend(get_user_model())
         client = get_client(user)
         response = client.delete(path)
-        assert response.status_code == HTTP_403_FORBIDDEN
+        assert response.status_code == HTTP_404_NOT_FOUND
 
-    def test_logged_user_cant_delete_his_recipes(self, db):
+    def test_logged_user_cant_delete_his_recipes_from_their_personal_area(self, db):
         user = mixer.blend(get_user_model())
         recipe = mixer.blend('recipes.Recipe', author=user, title='My test recipe', description='test description',
                              ingredients=[{"name": "Eggs", "unit": "g", "quantity": 40}])
-        path = reverse('recipes-detail', kwargs={'pk': recipe.pk})
+        path = reverse('personal-area-detail', kwargs={'pk': recipe.pk})
         client = get_client(user)
         response = client.delete(path)
         assert response.status_code == HTTP_403_FORBIDDEN
@@ -251,7 +265,7 @@ class TestUserRecipeViewSet:
         assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
 
     def test_admin_can_delete_recipes_of_every_user(self, recipes):
-        path = reverse('recipes-detail', kwargs={'pk': recipes[0].pk})
+        path = reverse('personal-area-detail', kwargs={'pk': recipes[0].pk})
         user = mixer.blend(get_user_model())
         user.is_superuser = True
         user.is_staff = True
@@ -271,3 +285,11 @@ class TestUserRecipeViewSet:
         assert response.status_code == HTTP_200_OK
         obj = parse(response)
         assert all(['updated_at' in recipe and 'author' in recipe for recipe in obj])
+
+    def test_deleter_cant_make_post_from_their_personal_area(self):
+        path = reverse('personal-area-list')
+        user = mixer.blend(get_user_model())
+        client = get_client(user)
+        recipe = {'title': "Test", 'description': 'My test recipe'}
+        response = client.post(path, recipe)
+        assert response.status_code == HTTP_403_FORBIDDEN
