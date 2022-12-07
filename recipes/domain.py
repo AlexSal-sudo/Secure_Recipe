@@ -27,7 +27,7 @@ class Description:
     def __post_init__(self):
         if not (0 < len(self.value) < 500):
             raise ValidationError("Description must be between 1-500 character")
-        if not re.match(r'^[a-zA-Z0-9À-ú \'!;\.,\n]+', self.value):
+        if not re.match(r'^[a-zA-Z0-9À-ú \'!;\.,\n]+$', self.value):
             raise ValidationError("Description is not syntactically correct")
 
 
