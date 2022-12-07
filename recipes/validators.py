@@ -1,14 +1,11 @@
 from django.core.validators import BaseValidator
 from django.core.exceptions import ValidationError
-from .domain import Unit, Name, Quantity, Ingredient
 import jsonschema
 
 
 def check_not_none_and_unique_ingredients(list_of_ingredients: list):
     if not isinstance(list_of_ingredients, list):
         raise ValidationError("Please, fill the ingredients properly")
-    if not list_of_ingredients:
-        raise ValidationError("Please insert at least one ingredient")
 
     for i in range(len(list_of_ingredients)):
         for j in range(len(list_of_ingredients)):
