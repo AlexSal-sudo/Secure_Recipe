@@ -7,7 +7,7 @@ import jsonschema
 def check_not_none_and_unique_ingredients(list_of_ingredients: list):
     if not isinstance(list_of_ingredients, list):
         raise ValidationError("Please, fill the ingredients properly")
-    if list_of_ingredients is None:
+    if not list_of_ingredients:
         raise ValidationError("Please insert at least one ingredient")
 
     for i in range(len(list_of_ingredients)):

@@ -43,7 +43,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
         output = []
         for recipe in queryset:
             try:
-                if JsonHandler.create_recipe_from_json(self.get_serializer(recipe).data).has_name_in_ingredient(n):
+                if JsonHandler.create_recipe_from_json(self.get_serializer(recipe).data).has_name_in_ingredients(n):
                     output.append(self.get_serializer(recipe).data)
             except ValidationError as e:
                 return Response(data=e.message, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

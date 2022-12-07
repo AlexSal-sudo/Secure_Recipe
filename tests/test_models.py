@@ -86,6 +86,28 @@ def test_recipe_ingredients_name_of_length_31_raise_exception(db):
         recipe.full_clean()
 
 
+def test_recipe_ingredients_dont_contain_duplicates(db):
+    recipe = mixer.blend('recipes.Recipe', title='Test', description='TEST', ingredients=[{
+        "name": "A",
+        "unit": "g",
+        "quantity": 40
+    },
+        {
+            "name": "A",
+            "unit": "g",
+            "quantity": 40
+        }
+    ])
+    with pytest.raises(ValidationError) as err:
+        recipe.full_clean()
+
+
+def test_recipe_ingredients_must_contain_at_least_one(db):
+    recipe = mixer.blend('recipes.Recipe', title='Test', description='TEST', ingredients=[])
+    with pytest.raises(ValidationError) as err:
+        recipe.full_clean()
+
+
 def test_recipe_ingredients_quantity_of_1001_raise_exception(db):
     recipe = mixer.blend('recipes.Recipe', title='Test', description='TEST', ingredients=[{
         "name": "test",

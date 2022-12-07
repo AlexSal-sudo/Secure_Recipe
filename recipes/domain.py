@@ -66,7 +66,7 @@ class Unit:
     def __post_init__(self):
         if not (0 < len(self.value) <= 3):
             raise ValidationError("Unit of the ingredient must be between 1-3 character")
-        if self.value.lower() not in self.__myUnit:
+        if self.value not in self.__myUnit:
             raise ValidationError(f"Unit of the ingredient must be one of this: {self.__myUnit}")
 
 
@@ -76,18 +76,6 @@ class Ingredient:
     name: Name
     quantity: Quantity
     unit: Unit
-
-    @property
-    def ingredient_name(self):
-        return self.name
-
-    @property
-    def ingredient_quantity(self):
-        return self.quantity
-
-    @property
-    def ingredient_unit(self):
-        return self.unit
 
     def __eq__(self, other):
         return self.name == other.name
@@ -104,18 +92,31 @@ class Recipe:
     create_key: InitVar[Any] = field(default='None')
 
     def __post_init__(self, create_key: Any):
-        validate('create_key', create_key, custom=Recipe.Builder.is_valid_key)
+        self.__check_key(create_key)
+
+    def __check_key(self, create_key):
+        if not Recipe.Builder.is_valid_key(create_key):
+            raise ValidationError("Unable to create a recipe")
+
+    def ingredients(self) -> int:
+        return len(self.__ingredients)
+
+    def ingredient(self, index: int) -> Ingredient:
+        if not 0 <= index < len(self.__ingredients):
+            raise ValidationError("There isn't this ingredient")
+        return self.__ingredients[index]
 
     @typechecked()
-    def has_name_in_ingredient(self, name: Name) -> bool:
+    def has_name_in_ingredients(self, name: Name) -> bool:
         for ingredient in self.__ingredients:
             if ingredient.name == name:
                 return True
         return False
 
     def _add_ingredient(self, ingredient: Ingredient, create_key: Any) -> None:
-        validate('create_key', create_key, custom=Recipe.Builder.is_valid_key)
-        validate('ingredient.name', ingredient.name, custom=lambda v: v not in self.__map_of_ingredients)
+        self.__check_key(create_key)
+        if ingredient.name in self.__map_of_ingredients:
+            raise ValidationError("Please, there are two same ingredient")
         self.__ingredients.append(ingredient)
         self.__map_of_ingredients[ingredient.name] = ingredient
 
@@ -123,20 +124,12 @@ class Recipe:
         return len(self.__ingredients) >= 1
 
     @typechecked()
-    def remove_ingredient(self, ingredient: Ingredient):
+    def remove_ingredient(self, ingredient: Ingredient, create_key: Any) -> None:
+        self.__check_key(create_key)
+        if ingredient.name not in self.__map_of_ingredients:
+            raise ValidationError("The ingredient is not contained in the recipe")
         self.__ingredients.remove(ingredient)
-
-    @property
-    def recipe_title(self):
-        return self.title
-
-    @property
-    def recipe_author(self):
-        return self.author
-
-    @property
-    def recipe_description(self):
-        return self.description
+        del self.__map_of_ingredients[ingredient.name]
 
     @typechecked
     @dataclass()
@@ -152,13 +145,22 @@ class Recipe:
             return key == Recipe.Builder.__create_key
 
         def with_ingredient(self, ingredient: Ingredient) -> 'Recipe.Builder':
-            validate('recipe', self.__recipe)
+            if not self.__recipe:
+                raise ValidationError("Unable to create the recipe")
             self.__recipe._add_ingredient(ingredient, self.__create_key)
             return self
 
+        def with_out_ingredient(self, ingredient: Ingredient) -> 'Recipe.Builder':
+            if not self.__recipe:
+                raise ValidationError("Unable to create the recipe")
+            self.__recipe.remove_ingredient(ingredient, self.__create_key)
+            return self
+
         def build(self) -> 'Recipe':
-            validate('recipe', self.__recipe)
-            validate('recipe.ingredients', self.__recipe._has_at_least_one_ingredient(), equals=True)
+            if not self.__recipe:
+                raise ValidationError("Unable to create the recipe")
+            if not self.__recipe._has_at_least_one_ingredient():
+                raise ValidationError("Please insert at least one ingredient")
             final_recipe, self.__recipe = self.__recipe, None
             return final_recipe
 
