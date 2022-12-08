@@ -178,24 +178,35 @@ class TestUserRecipeViewSet:
         path = reverse('personal-area-list')
         user = mixer.blend(get_user_model())
         client = get_client(user)
-        recipe = {'author': user.pk, 'title': "Test", 'description': 'My test recipe'}
-        response = client.post(path, recipe)
+        recipe = {'author': user.pk, 'title': "Test", 'description': 'My test recipe',
+                  'ingredients': [{"name": "Eggs", "unit": "g", "quantity": 40}]}
+        response = client.post(path, recipe, format='json')
         assert response.status_code == HTTP_201_CREATED
 
     def test_logged_user_cant_post_recipe_with_the_name_of_other_user(self, recipes):
         path = reverse('personal-area-list')
         user = mixer.blend(get_user_model())
         client = get_client(user)
-        recipe = {'author': user.pk + 1, 'title': "Test", 'description': 'My test recipe'}
-        response = client.post(path, recipe)
+        recipe = {'author': user.pk + 1, 'title': "Test", 'description': 'My test recipe',
+                  'ingredients': [{"name": "Eggs", "unit": "g", "quantity": 40}]}
+        response = client.post(path, recipe, format='json')
         assert response.status_code == HTTP_403_FORBIDDEN
 
     def test_logged_user_cant_post_recipe_with_invalid_author(self, recipes):
         path = reverse('personal-area-list')
         user = mixer.blend(get_user_model())
         client = get_client(user)
+        recipe = {'author': 'prova', 'title': "Test", 'description': 'My test recipe',
+                  'ingredients': [{"name": "Eggs", "unit": "g", "quantity": 40}]}
+        response = client.post(path, recipe, format='json')
+        assert response.status_code == HTTP_400_BAD_REQUEST
+
+    def test_logged_user_cant_post_recipe_without_at_least_one_ingredient(self, recipes):
+        path = reverse('personal-area-list')
+        user = mixer.blend(get_user_model())
+        client = get_client(user)
         recipe = {'author': 'prova', 'title': "Test", 'description': 'My test recipe'}
-        response = client.post(path, recipe)
+        response = client.post(path, recipe, format='json')
         assert response.status_code == HTTP_400_BAD_REQUEST
 
     def test_logged_user_cant_delete_recipe_of_other_user_from_personal_area(self, recipes):
