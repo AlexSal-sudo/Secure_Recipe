@@ -93,6 +93,8 @@ class PrivateRecipeViewSet(viewsets.ModelViewSet):
         return UserRecipeSerializer
 
     def create(self, request, *args, **kwargs):
+        if 'ingredients' not in request.data:
+            return Response(data="Please enter at least one ingredients", status=status.HTTP_400_BAD_REQUEST)
         if 'author' in request.data:
             if not re.match(r'^\d+$', request.data['author']):
                 return Response(data="Please enter a valid author", status=status.HTTP_400_BAD_REQUEST)
