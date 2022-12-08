@@ -1,5 +1,6 @@
 import re
 
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -20,15 +21,18 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
             return AdminModeratorRecipeSerializer
         return UserRecipeSerializer
 
-    @action(detail=False, methods=['GET'], url_path='by-author/(?P<pk>[^/.]+)', url_name='filter-author')
-    def all_recipe_by_author(self, request, pk=None):
-        if not re.match(r'^\d+$', pk):
-            return Response(data="Please enter a valid author", status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=False, methods=['GET'], url_path='by-author/(?P<name>[^/.]+)', url_name='filter-author')
+    def all_recipe_by_author(self, request, name=None):
+        if len(name) > 150 or not re.match(r'^[a-zA-Z0-9@\.\+\-\_]+$', name):
+            return Response(data='Please, enter a valid user', status=status.HTTP_400_BAD_REQUEST)
 
-        queryset = Recipe.objects.filter(author=pk)
-        serializer = self.get_serializer(queryset, many=True)
-        if serializer.data:
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        user = get_user_model().objects.filter(username=name)
+
+        if user:
+            queryset = Recipe.objects.filter(author=user[0].pk)
+            serializer = self.get_serializer(queryset, many=True)
+            if serializer.data:
+                return Response(data=serializer.data, status=status.HTTP_200_OK)
 
         return Response(data='Sorry, cannot find recipes written by this author', status=status.HTTP_204_NO_CONTENT)
 

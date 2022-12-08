@@ -77,7 +77,8 @@ class TestUserRecipeViewSet:
         assert len(obj) == len(recipes)
 
     def test_anon_user_can_filter_by_author(self, recipes):
-        path = reverse('recipes-filter-author', kwargs={'pk': '2'})
+        print(recipes[0].author.username)
+        path = reverse('recipes-filter-author', kwargs={'name': recipes[0].author.username})
         client = get_client()
         response = client.get(path)
         assert response.status_code == HTTP_200_OK
@@ -214,7 +215,7 @@ class TestUserRecipeViewSet:
         assert response.status_code == HTTP_403_FORBIDDEN
 
     def test_logged_user_can_filter_recipes_by_author_from_public_interface(self, recipes):
-        path = reverse('recipes-filter-author', kwargs={'pk': '2'})
+        path = reverse('recipes-filter-author', kwargs={'name': recipes[0].author.username})
         user = mixer.blend(get_user_model())
         client = get_client(user)
         response = client.get(path)
@@ -259,7 +260,7 @@ class TestUserRecipeViewSet:
         assert response.status_code == HTTP_400_BAD_REQUEST
 
     def test_every_user_must_enter_a_valid_author_when_looking_for_recipes(self):
-        path = reverse('recipes-filter-author', kwargs={'pk': 'I0NV4L1D'})
+        path = reverse('recipes-filter-author', kwargs={'name': '!!!!PROVA!!!!'})
         non_client = get_client()
         user = mixer.blend(get_user_model())
         client = get_client(user)
@@ -279,7 +280,7 @@ class TestUserRecipeViewSet:
         assert response.status_code == HTTP_400_BAD_REQUEST
 
     def test_every_user_search_for_non_existent_author_receive_not_found_recipes(self):
-        path = reverse('recipes-filter-author', kwargs={'pk': 5})
+        path = reverse('recipes-filter-author', kwargs={'name': 'Genoveffo'})
         user = mixer.blend(get_user_model())
         client = get_client(user)
         non_client = get_client()
