@@ -17,7 +17,7 @@ INGREDIENTS_SCHEMA = {
             "quantity": {"description": "The quantity of the ingredient", "type": 'number', "minimum": 1,
                          "maximum": 1000},
             "unit": {"description": "The unit of the ingredient", "type": 'string',
-                     'enum': ["g", "l", "kg", "n/a"]}
+                     'enum': ['kg', 'g', 'l', 'cl', 'ml', 'cup', 'n/a']}
         },
         "required": ["name", "quantity", "unit"],
         "maxProperties": 3
