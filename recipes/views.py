@@ -1,7 +1,6 @@
 import re
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import ValidationError
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action

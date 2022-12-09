@@ -14,7 +14,7 @@ methodForbiddenModerator = ['POST', 'PUT', 'PATCH']
 class IsModeratorOrAdmin(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        if request.method in methodForbiddenModerator and request.user.groups.filter(name='recipe_moderators').exists() \
+        if request.method in methodForbiddenModerator and request.user.groups.filter(name='recipe_moderators').exists()\
                 and not request.user.is_superuser:
             return False
         return True

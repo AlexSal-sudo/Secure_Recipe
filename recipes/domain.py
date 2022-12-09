@@ -1,10 +1,9 @@
 from dataclasses import dataclass, field, InitVar
 import re
 from datetime import date, datetime
-from typing import List, Callable, Dict, Any, Optional
+from typing import List, Dict, Any, Optional
 from django.core.exceptions import ValidationError
 from typeguard import typechecked
-from valid8 import validate
 
 
 @typechecked
@@ -27,7 +26,7 @@ class Description:
     def __post_init__(self):
         if not (0 < len(self.value) < 500):
             raise ValidationError("Description must be between 1-500 character")
-        if not re.match(r'^[a-zA-Z0-9À-ú \'!;\.,\n]+$', self.value):
+        if not re.match(r'^[a-zA-Z0-9À-ú \'!;.,\n]+$', self.value):
             raise ValidationError("Description is not syntactically correct")
 
 
