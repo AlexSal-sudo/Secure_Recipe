@@ -37,6 +37,5 @@ class Recipe(models.Model):
                             validators=[JSONSchemaValidator(limit_value=INGREDIENTS_SCHEMA),
                                         check_not_none_and_unique_ingredients])
 
-
     def __str__(self):
         return self.title

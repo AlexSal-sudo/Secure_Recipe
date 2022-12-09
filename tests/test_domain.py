@@ -75,7 +75,7 @@ class TestDomainPrimitives:
 
     def test_recipe_cannot_be_built_without_builder(self):
         with pytest.raises(ValidationError):
-            recipe = Recipe(Title("Title"), Description("Description"), datetime.now().date())
+            Recipe(Title("Title"), Description("Description"), datetime.now().date())
 
     def test_recipe_builder_has_at_least_one_ingredient(self):
         recipe_builder = Recipe.Builder(Title("Title"), Description("Description"), datetime.now().date())

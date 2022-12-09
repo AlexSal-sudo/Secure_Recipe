@@ -20,5 +20,3 @@ class JSONSchemaValidator(BaseValidator):
             jsonschema.validate(value, schema)
         except jsonschema.exceptions.ValidationError as e:
             raise ValidationError(e.message)
-
-

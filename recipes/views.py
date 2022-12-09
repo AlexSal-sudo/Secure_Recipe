@@ -1,6 +1,7 @@
 import re
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import ValidationError
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -23,7 +24,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['GET'], url_path='by-author/(?P<name>[^/.]+)', url_name='filter-author')
     def all_recipe_by_author(self, request, name=None):
-        if len(name) > 150 or not re.match(r'^[a-zA-Z0-9@\.\+\-\_]+$', name):
+        if len(name) > 150 or not re.match(r'^[a-zA-Z0-9@.+\-_]+$', name):
             return Response(data='Please, enter a valid user', status=status.HTTP_400_BAD_REQUEST)
 
         user = get_user_model().objects.filter(username=name)
@@ -60,7 +61,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['GET'], url_path='by-title/(?P<title>[^/.]+)', url_name='filter-title')
     def all_recipe_by_title(self, request, title=None):
         try:
-            t = Title(title)
+            Title(title)
         except ValidationError as e:
             return Response(data=e.message, status=status.HTTP_400_BAD_REQUEST)
 
@@ -121,3 +122,12 @@ class PrivateRecipeViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset().order_by('-created_at').values()
         serializer = self.get_serializer(queryset, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['GET'], url_path='is-moderator', url_name='moderator')
+    def is_moderator(self, request):
+        if not self.request.user.is_superuser and not self.request.user.groups.filter(name='recipe_moderators').exists():
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response(data={'is_moderator': True,
+                              'is_admin': self.request.user.is_superuser},
+                        status=status.HTTP_200_OK)

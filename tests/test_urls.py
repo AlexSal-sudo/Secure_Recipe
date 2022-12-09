@@ -8,7 +8,8 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from mixer.backend.django import mixer
 from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, \
-    HTTP_204_NO_CONTENT, HTTP_500_INTERNAL_SERVER_ERROR, HTTP_405_METHOD_NOT_ALLOWED, HTTP_404_NOT_FOUND
+    HTTP_204_NO_CONTENT, HTTP_500_INTERNAL_SERVER_ERROR, HTTP_405_METHOD_NOT_ALLOWED, HTTP_404_NOT_FOUND, \
+    HTTP_401_UNAUTHORIZED
 from rest_framework.test import APIClient
 
 
@@ -260,6 +261,13 @@ class TestUserRecipeViewSet:
         response = client.get(path)
         assert response.status_code == HTTP_200_OK
 
+    def test_logged_user_cant_check_if_is_superuser_or_moderator(self):
+        path = reverse('personal-area-moderator')
+        user = mixer.blend(get_user_model())
+        client = get_client(user)
+        response = client.get(path)
+        assert response.status_code == HTTP_401_UNAUTHORIZED
+
     def test_every_user_must_enter_a_valid_title_when_looking_for_recipes(self):
         path = reverse('recipes-filter-title', kwargs={'title': 'I0NV4L1D'})
         user = mixer.blend(get_user_model())
@@ -375,6 +383,16 @@ class TestUserRecipeViewSet:
         obj = parse(response)
         assert all(['updated_at' in recipe and 'author' in recipe for recipe in obj])
 
+    def test_admin_can_check_if_moderator_or_superuser(self, recipes):
+        path = reverse('personal-area-moderator')
+        user = mixer.blend(get_user_model())
+        user.is_superuser = True
+        user.is_staff = True
+        user.save()
+        client = get_client(user)
+        response = client.get(path)
+        assert response.status_code == HTTP_200_OK
+
     def test_moderator_cant_make_post_from_their_personal_area(self):
         path = reverse('personal-area-list')
         user = mixer.blend(get_user_model())
@@ -411,3 +429,12 @@ class TestUserRecipeViewSet:
         client = get_client(user)
         response = client.delete(path)
         assert response.status_code == HTTP_204_NO_CONTENT
+
+    def test_moderator_can_check_if_moderator_or_superuser(self, recipes):
+        path = reverse('personal-area-moderator')
+        user = mixer.blend(get_user_model())
+        group = mixer.blend(Group, name='recipe_moderators')
+        user.groups.add(group)
+        client = get_client(user)
+        response = client.get(path)
+        assert response.status_code == HTTP_200_OK
