@@ -13,6 +13,15 @@ from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK, HTTP_201_CREA
 from rest_framework.test import APIClient
 
 
+@pytest.fixture()
+def admin(db):
+    user = mixer.blend(get_user_model())
+    user.is_superuser = True
+    user.is_staff = True
+    user.save()
+    return user
+
+
 @pytest.fixture
 def recipes(db):
     user = mixer.blend(get_user_model())
@@ -40,13 +49,6 @@ def parse(response):
     response.render()
     content = response.content.decode()
     return json.loads(content)
-
-
-def contains(response, key, value):
-    obj = parse(response)
-    if key not in obj:
-        return False
-    return value in obj[key]
 
 
 @pytest.mark.django_db
@@ -339,57 +341,37 @@ class TestUserRecipeViewSet:
         assert non_response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
         assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
 
-    def test_admin_can_delete_recipes_of_every_user(self, recipes):
+    def test_admin_can_delete_recipes_of_every_user(self, recipes, admin):
         path = reverse('personal-area-detail', kwargs={'pk': recipes[0].pk})
-        user = mixer.blend(get_user_model())
-        user.is_superuser = True
-        user.is_staff = True
-        user.save()
-        admin = get_client(user)
-        response = admin.delete(path)
+        user = get_client(admin)
+        response = user.delete(path)
         assert response.status_code == HTTP_204_NO_CONTENT
 
-    def test_admin_user_can_sort_by_date_from_personal_area(self, recipes):
+    def test_admin_user_can_sort_by_date_from_personal_area(self, recipes, admin):
         path = reverse('personal-area-sort-date')
-        user = mixer.blend(get_user_model())
-        user.is_superuser = True
-        user.is_staff = True
-        user.save()
-        client = get_client(user)
+        client = get_client(admin)
         response = client.get(path)
         obj = parse(response)
         assert len(obj) == 3
 
-    def test_admin_user_can_sort_by_title_from_personal_area(self, recipes):
+    def test_admin_user_can_sort_by_title_from_personal_area(self, recipes, admin):
         path = reverse('personal-area-sort-title')
-        user = mixer.blend(get_user_model())
-        user.is_superuser = True
-        user.is_staff = True
-        user.save()
-        client = get_client(user)
+        client = get_client(admin)
         response = client.get(path)
         obj = parse(response)
         assert len(obj) == 3
 
-    def test_admin_can_get_recipes_with_every_field(self, recipes):
+    def test_admin_can_get_recipes_with_every_field(self, recipes, admin):
         path = reverse('recipes-list')
-        user = mixer.blend(get_user_model())
-        user.is_superuser = True
-        user.is_staff = True
-        user.save()
-        admin = get_client(user)
-        response = admin.get(path)
+        user = get_client(admin)
+        response = user.get(path)
         assert response.status_code == HTTP_200_OK
         obj = parse(response)
         assert all(['updated_at' in recipe and 'author' in recipe for recipe in obj])
 
-    def test_admin_can_check_if_moderator_or_superuser(self, recipes):
+    def test_admin_can_check_if_moderator_or_superuser(self, recipes, admin):
         path = reverse('personal-area-moderator')
-        user = mixer.blend(get_user_model())
-        user.is_superuser = True
-        user.is_staff = True
-        user.save()
-        client = get_client(user)
+        client = get_client(admin)
         response = client.get(path)
         assert response.status_code == HTTP_200_OK
 
