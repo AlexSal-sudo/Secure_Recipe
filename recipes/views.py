@@ -125,9 +125,8 @@ class PrivateRecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['GET'], url_path='is-moderator', url_name='moderator')
     def is_moderator(self, request):
-        if not self.request.user.is_superuser and not self.request.user.groups.filter(name='recipe_moderators').exists():
+        if not self.request.user.is_superuser and not self.request.user.groups.filter(
+                name='recipe_moderators').exists():
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-        return Response(data={'is_moderator': True,
-                              'is_admin': self.request.user.is_superuser},
-                        status=status.HTTP_200_OK)
+        return Response(data={'is_admin': self.request.user.is_superuser}, status=status.HTTP_200_OK)
