@@ -2,6 +2,7 @@ import re
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db.models.functions import Lower
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,6 +11,15 @@ from .models import Recipe
 from .domain import Name, Title, JsonHandler
 from .permissions import IsModeratorOrAdmin
 from .serializers import UserRecipeSerializer, AdminModeratorRecipeSerializer
+
+ORDER_BY_TITLE = 'title'
+ORDER_BY_DATA = 'created_at'
+
+
+def sort_by(sort_value: str, objects, serializer):
+    queryset = objects.order_by(Lower(sort_value)).values()
+    serializer = serializer(queryset, many=True)
+    return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
 class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -73,15 +83,11 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['GET'], url_path='sort-by-title', url_name='sort-title')
     def sort_recipe_by_title(self, request):
-        queryset = Recipe.objects.all().order_by('title').values()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return sort_by(ORDER_BY_TITLE, Recipe.objects.all(), self.get_serializer_class())
 
     @action(detail=False, methods=['GET'], url_path='sort-by-date', url_name='sort-date')
     def sort_recipe_by_date(self, request):
-        queryset = Recipe.objects.all().order_by('-created_at').values()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return sort_by(ORDER_BY_DATA, Recipe.objects.all(), self.get_serializer_class())
 
 
 class PrivateRecipeViewSet(viewsets.ModelViewSet):
@@ -112,15 +118,11 @@ class PrivateRecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['GET'], url_path='sort-by-title', url_name='sort-title')
     def sort_recipe_by_title(self, request):
-        queryset = self.get_queryset().order_by('title').values()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return sort_by(ORDER_BY_TITLE, self.get_queryset(), self.get_serializer_class())
 
     @action(detail=False, methods=['GET'], url_path='sort-by-date', url_name='sort-date')
     def sort_recipe_by_date(self, request):
-        queryset = self.get_queryset().order_by('-created_at').values()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return sort_by(ORDER_BY_DATA, self.get_queryset(), self.get_serializer_class())
 
     @action(detail=False, methods=['GET'], url_path='is-moderator', url_name='moderator')
     def is_moderator(self, request):
