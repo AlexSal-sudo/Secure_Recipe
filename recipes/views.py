@@ -17,7 +17,7 @@ ORDER_BY_DATA = 'created_at'
 
 
 def sort_by(sort_value: str, objects, serializer):
-    queryset = objects.order_by(Lower(sort_value)).values()
+    queryset = objects.order_by(Lower(sort_value))
     serializer = serializer(queryset, many=True)
     return Response(data=serializer.data, status=status.HTTP_200_OK)
 
