@@ -13,9 +13,9 @@ class UserRecipeSerializer(serializers.ModelSerializer):
 
 
 class AdminModeratorRecipeSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='author.username', read_only=True)
+    author = serializers.CharField(source='author.username', read_only=True)
 
     class Meta:
-        fields = ('id', 'author', 'username', 'title', 'description', 'created_at', 'updated_at', 'ingredients')
+        fields = ('id', 'author', 'title', 'description', 'created_at', 'updated_at', 'ingredients')
         model = Recipe
         read_only_fields = ['author']

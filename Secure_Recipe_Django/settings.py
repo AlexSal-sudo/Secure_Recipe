@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'recipes.apps.RecipesConfig',
 ]
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASS': [
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ],
