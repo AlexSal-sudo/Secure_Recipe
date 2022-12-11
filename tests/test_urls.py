@@ -22,6 +22,14 @@ def admin(db):
     return user
 
 
+@pytest.fixture()
+def moderator(db):
+    user = mixer.blend(get_user_model())
+    group = mixer.blend(Group, name='recipe_moderators')
+    user.groups.add(group)
+    return user
+
+
 @pytest.fixture
 def recipes(db):
     user = mixer.blend(get_user_model())
@@ -263,12 +271,14 @@ class TestUserRecipeViewSet:
         response = client.get(path)
         assert response.status_code == HTTP_200_OK
 
-    def test_logged_user_cant_check_if_is_superuser_or_moderator(self):
-        path = reverse('personal-area-moderator')
+    def test_logged_user_can_check_its_account_type(self):
+        path = reverse('personal-area-account-type')
         user = mixer.blend(get_user_model())
         client = get_client(user)
         response = client.get(path)
-        assert response.status_code == HTTP_401_UNAUTHORIZED
+        assert response.status_code == HTTP_200_OK
+        obj = parse(response)
+        assert obj['type-account'] == 0
 
     def test_every_user_must_enter_a_valid_title_when_looking_for_recipes(self):
         path = reverse('recipes-filter-title', kwargs={'title': 'I0NV4L1D'})
@@ -369,54 +379,51 @@ class TestUserRecipeViewSet:
         obj = parse(response)
         assert all(['updated_at' in recipe and 'author' in recipe for recipe in obj])
 
-    def test_admin_can_check_if_moderator_or_superuser(self, recipes, admin):
-        path = reverse('personal-area-moderator')
+    def test_admin_can_check_its_account_type(self, admin):
+        path = reverse('personal-area-account-type')
         client = get_client(admin)
         response = client.get(path)
         assert response.status_code == HTTP_200_OK
+        obj = parse(response)
+        assert obj['type-account'] == 1
 
-    def test_moderator_cant_make_post_from_their_personal_area(self):
+    def test_admin_can_check_if_moderator_or_superuser(self, recipes, admin):
+        path = reverse('personal-area-account-type')
+        client = get_client(admin)
+        response = client.get(path)
+        assert response.status_code == HTTP_200_OK
+        obj = parse(response)
+        assert obj['type-account'] == 1
+
+    def test_moderator_cant_make_post_from_their_personal_area(self, moderator):
         path = reverse('personal-area-list')
-        user = mixer.blend(get_user_model())
-        group = mixer.blend(Group, name='recipe_moderators')
-        user.groups.add(group)
-        client = get_client(user)
+        client = get_client(moderator)
         recipe = {'title': "Test", 'description': 'My test recipe'}
         response = client.post(path, recipe)
         assert response.status_code == HTTP_403_FORBIDDEN
 
-    def test_moderator_cant_make_put_from_their_personal_area(self):
+    def test_moderator_cant_make_put_from_their_personal_area(self, moderator):
         path = reverse('personal-area-list')
-        user = mixer.blend(get_user_model())
-        group = mixer.blend(Group, name='recipe_moderators')
-        user.groups.add(group)
-        client = get_client(user)
+        client = get_client(moderator)
         response = client.put(path)
         assert response.status_code == HTTP_403_FORBIDDEN
 
-    def test_moderator_cant_delete_super_user_recipes_from_their_personal_area(self, recipes):
+    def test_moderator_cant_delete_super_user_recipes_from_their_personal_area(self, recipes, moderator):
         path = reverse('personal-area-detail', kwargs={'pk': recipes[1].pk})
-        user = mixer.blend(get_user_model())
-        group = mixer.blend(Group, name='recipe_moderators')
-        user.groups.add(group)
-        moderator = get_client(user)
-        response = moderator.delete(path)
+        client = get_client(moderator)
+        response = client.delete(path)
         assert response.status_code == HTTP_403_FORBIDDEN
 
-    def test_moderator_can_delete_non_super_user_recipes_from_their_personal_area(self, recipes):
+    def test_moderator_can_delete_non_super_user_recipes_from_their_personal_area(self, recipes, moderator):
         path = reverse('personal-area-detail', kwargs={'pk': recipes[0].pk})
-        user = mixer.blend(get_user_model())
-        group = mixer.blend(Group, name='recipe_moderators')
-        user.groups.add(group)
-        client = get_client(user)
+        client = get_client(moderator)
         response = client.delete(path)
         assert response.status_code == HTTP_204_NO_CONTENT
 
-    def test_moderator_can_check_if_moderator_or_superuser(self, recipes):
-        path = reverse('personal-area-moderator')
-        user = mixer.blend(get_user_model())
-        group = mixer.blend(Group, name='recipe_moderators')
-        user.groups.add(group)
-        client = get_client(user)
+    def test_moderator_can_check_its_account_type(self, moderator):
+        path = reverse('personal-area-account-type')
+        client = get_client(moderator)
         response = client.get(path)
         assert response.status_code == HTTP_200_OK
+        obj = parse(response)
+        assert obj['type-account'] == 2

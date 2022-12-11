@@ -34,7 +34,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['GET'], url_path='by-author/(?P<name>[^/.]+)', url_name='filter-author')
     def all_recipe_by_author(self, request, name=None):
         if len(name) > 150 or not re.match(r'^[a-zA-Z0-9@.+\-_]+$', name):
-            return Response(data='Please, enter a valid user', status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={'detail': 'Please, enter a valid user'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = get_user_model().objects.filter(username=name)
 
@@ -44,7 +44,8 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
             if serializer.data:
                 return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-        return Response(data='Sorry, cannot find recipes written by this author', status=status.HTTP_204_NO_CONTENT)
+        return Response(data={'detail': 'Sorry, cannot find recipes written by this author'},
+                        status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['GET'], url_path='by-ingredient/(?P<name>[^/.]+)', url_name='filter-ingredient')
     def all_recipe_by_ingredient(self, request, name=None):
@@ -65,7 +66,8 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
         if output:
             return Response(data=output, status=status.HTTP_200_OK)
 
-        return Response(data="Sorry, there is no recipe with this ingredient", status=status.HTTP_204_NO_CONTENT)
+        return Response(data={'detail': "Sorry, there is no recipe with this ingredient"},
+                        status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['GET'], url_path='by-title/(?P<title>[^/.]+)', url_name='filter-title')
     def all_recipe_by_title(self, request, title=None):
@@ -79,7 +81,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
         if serializer.data:
             return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-        return Response(data='Sorry, there is no recipe with this title', status=status.HTTP_204_NO_CONTENT)
+        return Response(data={'detail': 'Sorry, there is no recipe with this title'}, status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['GET'], url_path='sort-by-title', url_name='sort-title')
     def sort_recipe_by_title(self, request):
@@ -100,10 +102,10 @@ class PrivateRecipeViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if 'ingredients' not in request.data:
-            return Response(data="Please add at least one ingredient", status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={'detail': "Please add at least one ingredient"}, status=status.HTTP_400_BAD_REQUEST)
         if 'author' in request.data:
             if not re.match(r'^\d+$', str(request.data['author'])):
-                return Response(data="Please enter a valid author", status=status.HTTP_400_BAD_REQUEST)
+                return Response(data={'detail': "Please enter a valid author"}, status=status.HTTP_400_BAD_REQUEST)
             elif int(request.data['author']) != self.request.user.pk:
                 return Response(status=status.HTTP_403_FORBIDDEN)
 
@@ -124,10 +126,13 @@ class PrivateRecipeViewSet(viewsets.ModelViewSet):
     def sort_recipe_by_date(self, request):
         return sort_by(ORDER_BY_DATA, self.get_queryset(), self.get_serializer_class())
 
-    @action(detail=False, methods=['GET'], url_path='is-moderator', url_name='moderator')
+    @action(detail=False, methods=['GET'], url_path='account-type', url_name='account-type')
     def is_moderator(self, request):
-        if not self.request.user.is_superuser and not self.request.user.groups.filter(
-                name='recipe_moderators').exists():
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        account_type = 0
+        if self.request.user.is_superuser:
+            account_type = 1
+        elif self.request.user.groups.filter(name='recipe_moderators').exists():
+            account_type = 2
 
-        return Response(data={'is_admin': self.request.user.is_superuser}, status=status.HTTP_200_OK)
+        return Response(data={'type-account': account_type}, status=status.HTTP_200_OK)
+

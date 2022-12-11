@@ -4,9 +4,8 @@ import jsonschema
 
 
 def check_not_none_and_unique_ingredients(list_of_ingredients: list):
-    if not isinstance(list_of_ingredients, list):
+    if type(list_of_ingredients) is not list:
         raise ValidationError("Please, fill the ingredients properly")
-    print("QUI")
     for i in range(len(list_of_ingredients)):
         for j in range(len(list_of_ingredients)):
             if i != j and list_of_ingredients[i]['name'] == list_of_ingredients[j]['name']:
