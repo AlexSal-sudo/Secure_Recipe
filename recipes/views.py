@@ -36,7 +36,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
         if len(name) > 150 or not re.match(r'^[a-zA-Z0-9@.+\-_]+$', name):
             return Response(data={'detail': 'Please, enter a valid user'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = get_user_model().objects.filter(username=name)
+        user = get_user_model().objects.filter(username__icontains=name)
 
         if user:
             queryset = Recipe.objects.filter(author=user[0].pk)
