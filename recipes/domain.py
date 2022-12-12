@@ -100,6 +100,7 @@ class Recipe:
     def ingredients(self) -> int:
         return len(self.__ingredients)
 
+    @typechecked()
     def ingredient(self, index: int) -> Ingredient:
         if not 0 <= index < len(self.__ingredients):
             raise ValidationError("There isn't this ingredient")
@@ -112,6 +113,7 @@ class Recipe:
                 return True
         return False
 
+    @typechecked()
     def _add_ingredient(self, ingredient: Ingredient, create_key: Any) -> None:
         self.__check_key(create_key)
         if ingredient.name in self.__map_of_ingredients:
@@ -119,7 +121,8 @@ class Recipe:
         self.__ingredients.append(ingredient)
         self.__map_of_ingredients[ingredient.name] = ingredient
 
-    def _has_at_least_one_ingredient(self):
+    @typechecked()
+    def _has_at_least_one_ingredient(self) -> int:
         return len(self.__ingredients) >= 1
 
     @typechecked()
@@ -143,18 +146,21 @@ class Recipe:
         def is_valid_key(key: Any) -> bool:
             return key == Recipe.Builder.__create_key
 
+        @typechecked()
         def with_ingredient(self, ingredient: Ingredient) -> 'Recipe.Builder':
             if not self.__recipe:
                 raise ValidationError("Unable to create the recipe")
             self.__recipe._add_ingredient(ingredient, self.__create_key)
             return self
 
+        @typechecked()
         def with_out_ingredient(self, ingredient: Ingredient) -> 'Recipe.Builder':
             if not self.__recipe:
                 raise ValidationError("Unable to create the recipe")
             self.__recipe.remove_ingredient(ingredient, self.__create_key)
             return self
 
+        @typechecked()
         def build(self) -> 'Recipe':
             if not self.__recipe:
                 raise ValidationError("Unable to create the recipe")

@@ -45,7 +45,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
                 return Response(data=serializer.data, status=status.HTTP_200_OK)
 
         return Response(data={'detail': 'Sorry, cannot find recipes written by this author'},
-                        status=status.HTTP_204_NO_CONTENT)
+                        status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['GET'], url_path='by-ingredient/(?P<name>[^/.]+)', url_name='filter-ingredient')
     def all_recipe_by_ingredient(self, request, name=None):
@@ -67,7 +67,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
             return Response(data=output, status=status.HTTP_200_OK)
 
         return Response(data={'detail': "Sorry, there is no recipe with this ingredient"},
-                        status=status.HTTP_204_NO_CONTENT)
+                        status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['GET'], url_path='by-title/(?P<title>[^/.]+)', url_name='filter-title')
     def all_recipe_by_title(self, request, title=None):
@@ -81,7 +81,7 @@ class PublicRecipeViewSet(viewsets.ReadOnlyModelViewSet):
         if serializer.data:
             return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-        return Response(data={'detail': 'Sorry, there is no recipe with this title'}, status=status.HTTP_204_NO_CONTENT)
+        return Response(data={'detail': 'Sorry, there is no recipe with this title'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['GET'], url_path='sort-by-title', url_name='sort-title')
     def sort_recipe_by_title(self, request):

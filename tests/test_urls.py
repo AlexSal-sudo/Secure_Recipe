@@ -8,8 +8,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from mixer.backend.django import mixer
 from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, \
-    HTTP_204_NO_CONTENT, HTTP_500_INTERNAL_SERVER_ERROR, HTTP_405_METHOD_NOT_ALLOWED, HTTP_404_NOT_FOUND, \
-    HTTP_401_UNAUTHORIZED
+    HTTP_500_INTERNAL_SERVER_ERROR, HTTP_405_METHOD_NOT_ALLOWED, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT
 from rest_framework.test import APIClient
 
 
@@ -317,8 +316,8 @@ class TestUserRecipeViewSet:
         non_client = get_client()
         non_response = non_client.get(path)
         response = client.get(path)
-        assert non_response.status_code == HTTP_204_NO_CONTENT
-        assert response.status_code == HTTP_204_NO_CONTENT
+        assert non_response.status_code == HTTP_404_NOT_FOUND
+        assert response.status_code == HTTP_404_NOT_FOUND
 
     def test_every_user_search_for_non_existent_title_receive_not_found_recipes(self):
         path = reverse('recipes-filter-title', kwargs={'title': 'NONEXISTENT'})
@@ -327,8 +326,8 @@ class TestUserRecipeViewSet:
         non_client = get_client()
         non_response = non_client.get(path)
         response = client.get(path)
-        assert non_response.status_code == HTTP_204_NO_CONTENT
-        assert response.status_code == HTTP_204_NO_CONTENT
+        assert non_response.status_code == HTTP_404_NOT_FOUND
+        assert response.status_code == HTTP_404_NOT_FOUND
 
     def test_every_user_search_for_non_existent_ingredient_receive_not_found_recipes(self):
         path = reverse('recipes-filter-ingredient', kwargs={'name': 'NONEXISTENT'})
@@ -337,8 +336,8 @@ class TestUserRecipeViewSet:
         non_client = get_client()
         non_response = non_client.get(path)
         response = client.get(path)
-        assert non_response.status_code == HTTP_204_NO_CONTENT
-        assert response.status_code == HTTP_204_NO_CONTENT
+        assert non_response.status_code == HTTP_404_NOT_FOUND
+        assert response.status_code == HTTP_404_NOT_FOUND
 
     @patch('recipes.views.JsonHandler.create_recipe_from_json', side_effect=ValidationError("ERROR"))
     def test_every_user_if_there_was_internal_error_then_it_is_notified(self, mock: Mock, recipes):
