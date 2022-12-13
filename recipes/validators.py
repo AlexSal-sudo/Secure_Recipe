@@ -18,4 +18,4 @@ class JSONSchemaValidator(BaseValidator):
         try:
             jsonschema.validate(value, schema)
         except jsonschema.exceptions.ValidationError as e:
-            raise ValidationError(e.message)
+            raise ValidationError(e.schema['error_msg'] if 'error_msg' in e.schema else e.message)
