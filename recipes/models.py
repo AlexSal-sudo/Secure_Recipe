@@ -14,7 +14,7 @@ INGREDIENTS_SCHEMA = {
         "properties": {
             "name": {"description": "The name of the ingredient", "type": 'string', 'minLength': 1, 'maxLength': 30,
                      'pattern': "^[a-zA-ZÀ-ú ]+$", "error_msg": "Please enter a valid ingredient name"},
-            "quantity": {"description": "The quantity of the ingredient", "type": 'number', "minimum": 1,
+            "quantity": {"description": "The quantity of the ingredient", "type": 'integer', "minimum": 1,
                          "maximum": 1000, "error_msg": "Please provide a correct quantity value"},
             "unit": {"description": "The unit of the ingredient", "type": 'string',
                      'enum': ['kg', 'g', 'l', 'cl', 'ml', 'cup', 'n/a'],
