@@ -349,6 +349,7 @@ class TestUserRecipeViewSet:
         response = client.get(path)
         assert non_response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
         assert response.status_code == HTTP_500_INTERNAL_SERVER_ERROR
+        mock.assert_called()
 
     def test_admin_can_delete_recipes_of_every_user(self, recipes, admin):
         path = reverse('personal-area-detail', kwargs={'pk': recipes[0].pk})

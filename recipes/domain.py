@@ -93,7 +93,8 @@ class Recipe:
     def __post_init__(self, create_key: Any):
         self.__check_key(create_key)
 
-    def __check_key(self, create_key):
+    @staticmethod
+    def __check_key(create_key):
         if not Recipe.Builder.is_valid_key(create_key):
             raise ValidationError("Unable to create a recipe")
 

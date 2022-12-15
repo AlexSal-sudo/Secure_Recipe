@@ -135,4 +135,3 @@ class PrivateRecipeViewSet(viewsets.ModelViewSet):
             account_type = 2
 
         return Response(data={'type-account': account_type}, status=status.HTTP_200_OK)
-
